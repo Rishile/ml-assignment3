@@ -61,7 +61,7 @@ def load_exchange_rate(country_col=0):
 
 
 # Household electric power consumption (UCI) 
-def load_household_power(resample="H"):
+def load_household_power(resample="h"):
     url = (
         "https://archive.ics.uci.edu/ml/machine-learning-databases/00235/"
         "household_power_consumption.zip"
@@ -70,17 +70,16 @@ def load_household_power(resample="H"):
     import zipfile
     z = zipfile.ZipFile(io.BytesIO(r.content))
     with z.open("household_power_consumption.txt") as f:
-        df = pd.read_csv(
-            f, sep=";", na_values="?", low_memory=False,
-            parse_dates={"datetime": ["Date", "Time"]},
-        )
-    df = df.set_index("datetime")
+        df = pd.read_csv(f, sep=";", na_values="?", low_memory=False)
+    df["datetime"] = pd.to_datetime(
+        df["Date"] + " " + df["Time"], format="%d/%m/%Y %H:%M:%S"
+    )
+    df = df.drop(columns=["Date", "Time"]).set_index("datetime")
     df["Global_active_power"] = pd.to_numeric(df["Global_active_power"], errors="coerce")
     series = df["Global_active_power"].dropna()
     if resample:
         series = series.resample(resample).mean()
     return series
-
 
 # Beijing PM2.5 air quality (UCI) 
 def load_beijing_pm25():
